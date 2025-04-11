@@ -63,11 +63,99 @@ System Call	ফাইল এক্সেস করে হার্ডড্র�
 Thread Pool	Heavy ফাইল কাজ গুলো থ্রেডে করে
 
 
-
-⸻
-
 📌 
 	•	fs module use করে আমরা file read/write করতে পারি
 	•	Under the hood, সব কাজ Libuv ও Thread Pool এর মাধ্যমেই হয়
 	•	File IO কাজ গুলো asynchronous হলেও চাইলে synchronous ভাবে করাও যায় (যেমন fs.readFileSync())
+
+
+
+========================
+
+
+⸻
+
+
+
+# 🛠️ Node.js এ File Read/Write করার ৩টি ভিন্ন উপায়
+
+Node.js এ ফাইল read/write করার মূলত ৩টি ভিন্ন পদ্ধতি আছে।  
+তিনটিই একই কাজ করে, কিন্তু performance ও usability দিক থেকে আলাদা।
+
+---
+
+## 🔁 ১. Callback-based API
+
+**Old-school style** যেটা Node.js এর শুরু থেকেই ছিল।  
+```js
+const fs = require('fs');
+
+fs.readFile('file.txt', 'utf8', (err, data) => {
+  if (err) throw err;
+  console.log(data);
+});
+
+📌 Callback hell তৈরি করে বড় প্রজেক্টে।
+
+⸻
+
+🌟 ২. Promise-based API (Modern & Recommended)
+
+ES6 এর পর থেকে Promises ও async/await জনপ্রিয় হয়ে উঠে।
+
+const fs = require('fs/promises');
+
+async function readFileAsync() {
+  const data = await fs.readFile('file.txt', 'utf8');
+  console.log(data);
+}
+readFileAsync();
+
+✅ Cleaner syntax
+✅ Easy to maintain
+✅ Better async control
+
+⸻
+
+🧱 ৩. Synchronous API (Blocking)
+
+Synchronous version সব কাজ main thread কে block করে।
+
+const fs = require('fs');
+
+const data = fs.readFileSync('file.txt', 'utf8');
+console.log(data);
+
+❌ Performance issue
+❌ পুরো অ্যাপ্লিকেশন freeze হয়ে যেতে পারে
+✅ কিছু special case এ দরকার হয় (e.g. startup config read)
+
+⸻
+
+🤔 কোনটা ব্যবহার করা উচিত?
+
+Approach	Recommendation	Use Case
+Callback API	Avoid if possible	Legacy code বা high-speed repeated calls
+Promise API	✅ Use 90% of the time	Async read/write, production use
+Sync API	❌ Avoid unless needed	App startup time, config read
+
+
+
+⸻
+
+⚠️ একটা বাস্তব উদাহরণ:
+
+ধরো তুমি একটা বড় ভিডিও ফাইল upload করছো…
+
+	•	যদি তুমি Sync API দিয়ে কাজ করো:
+	•	পুরো অ্যাপ্লিকেশন থেমে যাবে ফাইল শেষ না হওয়া পর্যন্ত ❌
+	•	যদি তুমি Promise API বা Callback API ব্যবহার করো:
+	•	কাজ হবে asynchronously — ইউজার অন্য কাজ চালিয়ে যেতে পারবে ✅
+
+⸻
+
+🧠 Summary
+	•	➤ Callback পুরনো ও কম ব্যবহৃত
+	•	➤ Promise হচ্ছে স্ট্যান্ডার্ড ও cleaner way
+	•	➤ Sync API সাবধান হয়ে ব্যবহার করতে হয়, main thread block হয়
 
