@@ -1,6 +1,6 @@
 
 import fs from "fs/promises"
-
+import { appendFile } from "fs/promises";
 
 (async () => {
     // commands
@@ -11,8 +11,9 @@ import fs from "fs/promises"
     const watcher = fs.watch("./command.txt")
     const commandFile = await fs.open('./command.txt', "r")
 
-    function createFile(path) {
-
+    async function createFile(path) {
+        console.log("creating a file")
+        await appendFile(path, "Something")
     }
 
     commandFile.on("change", async () => {
