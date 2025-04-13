@@ -2,11 +2,20 @@
 import fs from "fs/promises"
 
 
-(async () =>{
+(async () => {
+    // commands
+    const CREATE_FILE = "create a file";
+    const DELETE_FILE = "delete the file";
+    const RENAME_FILE = "rename the file";
+    const ADD_TO_FILE = "add to the file";
     const watcher = fs.watch("./command.txt")
     const commandFile = await fs.open('./command.txt', "r")
 
-    commandFile.on("change", async()=>{
+    function createFile(path) {
+
+    }
+
+    commandFile.on("change", async () => {
         // get size of the file
         const size = (await commandFile.stat()).size
         // allocate buffer with the size of file
@@ -17,12 +26,22 @@ import fs from "fs/promises"
         const offset = 0;
         // how many bytes we want to read
         const length = buff.byteLength;
-        const content = await commandFile.read(buff, offset, length, position)
-        console.log(content)
+        await commandFile.read(buff, offset, length, position)
+
+        // decode data from buffer
+        const command = buff.toString("utf-8")
+
+        // create a file
+        if (command.includes(CREATE_FILE)) {
+            const filePath = command.substring(CREATE_FILE + 1)
+            createFile(filePath)
+        }
+
     })
 
-    for await (const event of watcher){
-        if(event.eventType === "change"){
+    // Watcher
+    for await (const event of watcher) {
+        if (event.eventType === "change") {
             commandFile.emit("change")
         }
     }
