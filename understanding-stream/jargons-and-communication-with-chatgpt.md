@@ -114,3 +114,197 @@ Stream দিয়ে যখন তুমি বাইনারি ডেটা (b
 
 ⸻
 
+### Eigula ki amk detail e bujhao!
+    •	ArrayBuffer
+	•	DataView
+	•	Typed Arrays
+	•	Data Structure (ডেটা গঠন পদ্ধতি)
+⸻
+
+1. ArrayBuffer:
+
+কি এটা?
+ArrayBuffer হলো একটা fixed-length binary data block। অর্থাৎ এটা এক ধরনের কাঁচা মেমোরি, যেখানে ডেটা শুধু bytes আকারে থাকে (প্রতিটা byte = 8-bit)।
+
+ব্যবহার কোথায় হয়?
+ধরো তুমি একটা ছবি বা ভিডিও ফাইল read করছো, তখন এই ডেটা বাইনারি আকারে ArrayBuffer হিসেবে থাকে। এই buffer থেকে ডেটা বোঝার জন্য আমাদের নির্দিষ্ট টাইপে রূপান্তর করতে হয়।
+
+উদাহরণ:
+
+const buffer = new ArrayBuffer(4); // 4 bytes = 32 bits
+
+
+
+⸻
+
+2. DataView:
+
+কি এটা?
+DataView হলো এমন একটা interface, যেটা দিয়ে তুমি ArrayBuffer-এর উপর নিয়ন্ত্রিতভাবে read/write করতে পারো—কোন endianness (LE বা BE) ব্যবহার করবে, সেটা সহ।
+
+উদাহরণ:
+
+const buffer = new ArrayBuffer(4);
+const view = new DataView(buffer);
+
+view.setUint32(0, 0x12345678, true); // little-endian
+console.log(view.getUint32(0, true)); // 305419896
+
+মানে কী?
+এখানে আমরা buffer-এর মধ্যে একটা সংখ্যা রেখেছি এবং আবার সেটা পড়েছি। আমরা বলে দিয়েছি এটা little-endian হবে।
+
+⸻
+
+3. Typed Arrays:
+
+কি এটা?
+TypedArray হলো এমন array, যেটা ArrayBuffer-এর উপর ভিত্তি করে তৈরি হয় এবং নির্দিষ্ট একটা ডেটা টাইপ ধরে রাখে (যেমন: Int8Array, Uint16Array, Float32Array ইত্যাদি)।
+
+এটা ব্যবহার করলে তুমি numerical ডেটা অনেক দ্রুত প্রসেস করতে পারো।
+
+উদাহরণ:
+
+const buffer = new ArrayBuffer(4);
+const intView = new Uint32Array(buffer);
+intView[0] = 0x12345678;
+console.log(intView[0]); // 305419896
+
+
+
+⸻
+
+4. Data Structure (ডেটা গঠন পদ্ধতি):
+
+কি এটা?
+Data Structure মানে হলো এমন উপায়/প্যাটার্ন, যেটার মাধ্যমে ডেটাকে সংরক্ষণ ও অ্যাক্সেস করা যায়। যেমন:
+	•	Array
+	•	Object
+	•	Stack
+	•	Queue
+	•	Tree
+	•	Graph
+	•	Buffer ইত্যাদি।
+
+কেন দরকার?
+কারণ ঠিক ডেটা structure ছাড়া performance খারাপ হতে পারে বা ডেটা বোঝা মুশকিল হয়।
+
+⸻
+
+সংক্ষেপে সংযোগটা কেমন:
+
+টার্ম	কী কাজ করে	কবে লাগে
+ArrayBuffer	কাঁচা মেমোরি (byte-level) ধরে রাখে	বাইনারি ফাইল বা stream প্রসেস করতে
+DataView	কাস্টমভাবে buffer read/write করতে দেয়	যখন endianness handle করতে হয়
+TypedArray	টাইপসহ array তৈরি করে	ফাস্ট numerical ডেটা প্রসেস করতে
+Data Structure	ডেটা সাজানোর উপায়	efficient প্রোগ্রামিং এর জন্য
+
+
+
+⸻
+
+### Dataview and  Typedarray arektu bisod vabe alocona koro ami kicui bujtecina!
+
+⸻
+
+TypedArray (টাইপড অ্যারে)
+
+কি এটা?
+
+TypedArray হলো এমন একটা Array যেটা শুধুমাত্র একটা নির্দিষ্ট ডেটা টাইপের মান রাখতে পারে এবং ArrayBuffer-এর উপর ভিত্তি করে কাজ করে।
+মানে তুমি যদি Int8Array ব্যবহার করো, তাহলে সেখানে শুধু 8-bit signed integer রাখাই যাবে।
+
+সবচেয়ে গুরুত্বপূর্ণ বিষয়:
+TypedArray সব সময় ArrayBuffer থেকে তৈরি হয়। মনে করো, ArrayBuffer হলো খালি মেমোরি, আর TypedArray হলো সেই মেমোরিকে বোঝার উপায়।
+
+⸻
+
+কিছু Common TypedArrays:
+
+TypedArray	মানে কী	Byte size
+Int8Array	8-bit signed integer	1 byte
+Uint8Array	8-bit unsigned integer	1 byte
+Int16Array	16-bit signed integer	2 bytes
+Uint16Array	16-bit unsigned integer	2 bytes
+Float32Array	32-bit floating point	4 bytes
+
+
+
+⸻
+
+Example:
+
+const buffer = new ArrayBuffer(4); // 4 bytes মেমোরি
+const typedArray = new Uint16Array(buffer); // প্রতিটা item = 2 byte
+
+typedArray[0] = 500;
+typedArray[1] = 1000;
+
+console.log(typedArray); // Uint16Array(2) [500, 1000]
+
+	•	এখানে buffer ছিল ৪ byte।
+	•	আমরা বলেছি সেটা Uint16Array দিয়ে ব্যাখ্যা করব (প্রতিটি মান ২ byte), তাই ২টি সংখ্যা রাখল।
+
+⸻
+
+DataView (ডেটাভিউ)
+
+কি এটা?
+
+DataView হলো ArrayBuffer এর ওপর আরও low-level control দেওয়ার উপায়।
+তুমি কোন position-এ, কোন টাইপের ডেটা, কোন endianness দিয়ে read/write করবে—সব তুমি নির্ধারণ করতে পারো।
+
+⸻
+
+কেন দরকার?
+
+TypedArray কিছুটা rigid—মানে পুরো buffer একটা টাইপে ধরেই কাজ করে।
+কিন্তু অনেক সময় তোমার দরকার একই buffer-এর মধ্যে বিভিন্ন ডেটা টাইপ read/write করা, বা endian control করা।
+তখন DataView লাগে।
+
+⸻
+
+Example:
+
+const buffer = new ArrayBuffer(4);
+const view = new DataView(buffer);
+
+// নিচের লাইনটা একটা 32-bit unsigned integer লেখে (Little-endian)
+view.setUint32(0, 0x12345678, true); 
+
+// এখন সেটা আবার পড়ি
+const value = view.getUint32(0, true);
+console.log(value); // 305419896 (i.e. 0x12345678)
+
+এখানে true মানে little-endian। তুমি চাইলে false দিয়ে big-endian এ কাজ করতে পারো।
+
+⸻
+
+TypedArray vs DataView তুলনা:
+
+বিষয়	TypedArray	DataView
+একাধিক ডেটা টাইপ ব্যবহার	না, একটাই	হ্যাঁ
+Endianness কন্ট্রোল	না	হ্যাঁ
+সহজ ব্যবহার	হ্যাঁ	একটু জটিল
+পারফরম্যান্স	দ্রুত	একটু ধীর (কিন্তু কাস্টমাইজড)
+
+
+
+⸻
+
+বাস্তব উদাহরণ: একই buffer-এ দুইভাবে কাজ:
+
+const buffer = new ArrayBuffer(4);
+
+// TypedArray দিয়ে
+const typed = new Uint32Array(buffer);
+typed[0] = 0x12345678;
+console.log('TypedArray:', typed[0]);
+
+// DataView দিয়ে
+const view = new DataView(buffer);
+console.log('DataView (LE):', view.getUint32(0, true));  // little-endian
+console.log('DataView (BE):', view.getUint32(0, false)); // big-endian
+
+
+
+⸻
