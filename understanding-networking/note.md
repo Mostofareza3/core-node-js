@@ -112,3 +112,212 @@ Router ইন্টারনেটের ভিতরে এবং বাহি�
 
 এগুলো হলো Network এর basic building blocks – যেটা Node.js এর networking বুঝতে চাইলে জানা জরুরি।
 
+
+# Networking Layers (Node.js Context)
+
+কম্পিউটার বা ডিভাইসের মধ্যে যোগাযোগ (Communication) বোঝার জন্য আমরা Networking Model ব্যবহার করি। সবচেয়ে পরিচিত মডেল হলো **OSI Model**। এই মডেলটি ৭টি স্তরে ভাগ করা হয়েছে, কিন্তু এখানে আমরা মূলত ৫টি Key Layer নিয়ে আলোচনা করবো – যেটা **Internet Protocol Suite (TCP/IP Model)** এর context এ বেশি ব্যবহৃত হয়।
+
+---
+
+## ১. Physical Layer (Bits)
+
+এই লেয়ার responsible:
+- Electrical signal
+- Binary transmission (0s & 1s)
+
+### Example:
+- LAN Cable, Wi-Fi signal, Fiber optics ইত্যাদি
+
+### Key Point:
+এখানে কেবল raw bit গুলো signal আকারে move করে। কোনো intelligent routing বা addressing নাই।
+
+---
+
+## ২. Data Link Layer (Frames)
+
+এই লেয়ার ডেটাকে **Frame** আকারে পাঠায় এবং local network level communication handle করে।
+
+### Key Features:
+- MAC Address ব্যবহৃত হয়
+- Error Detection (CRC)
+- Switch এই লেয়ার-এ কাজ করে
+
+### Real-life:
+যখন একটা কম্পিউটার পাশের কম্পিউটারকে কিছু পাঠায় – তখন এই layer কাজ করে।
+
+---
+
+## ৩. Network Layer (Packets)
+
+এই লেয়ার responsible:
+- Routing
+- IP Addressing
+
+### Key Component:
+- IP Address (IPv4, IPv6)
+- Router
+- Packet Forwarding
+
+### Example:
+একটি packet Bangladesh থেকে USA server এ যাচ্ছে – কোন পথে যাবে সেটা ঠিক করে এই layer।
+
+---
+
+## ৪. Transport Layer (Segments)
+
+এই layer হল **end-to-end communication** এর জন্য responsible।
+
+### Two Protocols:
+- **TCP (Transmission Control Protocol):** Reliable, connection-oriented
+- **UDP (User Datagram Protocol):** Fast but connectionless (Used in video streaming, gaming)
+
+### Key Concepts:
+- Port Number
+- Flow Control
+- Error Recovery
+
+### Real-life:
+Browser থেকে server এ HTML request পাঠানো হয় TCP দিয়ে।
+
+---
+
+## ৫. Application Layer (Data)
+
+এই layer directly **software level** এ কাজ করে। যেটা একজন developer হিসেবে সবচেয়ে গুরুত্বপূর্ণ।
+
+### Examples of Protocols:
+- HTTP/HTTPS → Web Browsing
+- FTP → File Transfer
+- SMTP → Email Sending
+
+### Real-life:
+তুমি যখন `fetch()` call দাও বা Express.js দিয়ে API বানাও – তখন তুমি এই Application Layer এর সাথে কাজ করছো।
+
+---
+
+## Summary Table:
+
+| Layer | Data Unit | Key Concept | Example |
+|-------|-----------|-------------|---------|
+| Physical | Bits | Signal Transmission | LAN Cable, Wi-Fi |
+| Data Link | Frames | MAC Address, Switch | Ethernet Communication |
+| Network | Packets | IP Address, Router | Routing between cities |
+| Transport | Segments | Port, TCP/UDP | Reliable file transfer |
+| Application | Data | HTTP, FTP, SMTP | Web Browsing, API |
+
+---
+
+## Developer Perspective:
+আমরা Node.js developer হিসেবে সবচেয়ে বেশি কাজ করি **Application Layer** নিয়ে। কিন্তু যদি তুমি low-level networking API বা server/socket programming নিয়ে কাজ করো, তাহলে Transport ও Network layer এর ধারণাও অনেক গুরুত্বপূর্ণ হয়ে যায়।
+
+
+👉 Next time তুমি যখন `net`, `http`, `dgram`, বা `tls` module নিয়ে কাজ করবা, তখন এই লেয়ার গুলোর concept মাথায় থাকলে বুঝতে অনেক সুবিধা হবে।
+
+---
+
+
+# TCP vs UDP (Node.js Context)
+
+## TCP কি?
+TCP মানে **Transmission Control Protocol**। এটা একটি **connection-oriented** protocol, অর্থাৎ ডেটা পাঠানোর আগে দুই device এর মধ্যে একটা connection establish হয়।
+
+### Key Features:
+- Reliable (ডেটা ঠিকমতো পৌঁছায়)
+- Ordered (যেভাবে পাঠাও, ঠিক সেভাবে পৌঁছায়)
+- Error checking (corruption হলে detect করে)
+- Slow but safe
+
+---
+
+## UDP কি?
+UDP মানে **User Datagram Protocol**। এটা একটি **connectionless** protocol, অর্থাৎ কোনো connection establish না করেই ডেটা পাঠিয়ে দেয়।
+
+### Key Features:
+- Unreliable (গ্যারান্টি নাই যে ডেটা পৌঁছাবে)
+- No ordering
+- No error checking
+- Very fast
+
+---
+
+## TCP vs UDP: পার্থক্য
+
+| Feature | TCP | UDP |
+|--------|-----|-----|
+| Connection | আছে (Handshake লাগে) | নেই |
+| Reliability | Reliable | Unreliable |
+| Ordering | Ordered delivery | No order guarantee |
+| Speed | Slow (due to reliability) | Fast |
+| Use Case | Data accuracy দরকার হলে | Speed বেশি দরকার হলে |
+| Header Size | বড় | ছোট |
+| Congestion Control | আছে | নেই |
+
+---
+
+## TCP কীভাবে কাজ করে?
+
+TCP ডেটা পাঠানোর আগে **3-way handshake** করে:
+1. Client → SYN → Server
+2. Server → SYN-ACK → Client
+3. Client → ACK → Server
+
+তারপর ডেটা পাঠানো শুরু হয়:
+- ডেটা টুকরা করে পাঠানো হয় (Segmentation)
+- প্রতিটি segment acknowledgment সহ পাঠানো হয়
+- Lost হলে resend হয়
+
+### Example:
+```text
+Client: আমি তোমাকে data পাঠাতে চাই (SYN)
+Server: ঠিক আছে, আমি রেডি (SYN-ACK)
+Client: ঠিক আছে, আমি শুরু করছি (ACK)
+```
+
+---
+
+## UDP কীভাবে কাজ করে?
+
+UDP কোনো handshake করে না। ডেটা just পাঠিয়ে দেয় –
+- No connection
+- No acknowledgement
+- No resend
+
+### Example:
+```text
+Client: Data পাঠিয়ে দিলাম, যে পাইসে পাইসে!
+```
+
+---
+
+## TCP দিয়ে বানানো যায় এমন Application:
+
+1. **Web Browser** → HTTP/HTTPS TCP এর উপর কাজ করে
+2. **Email (SMTP, IMAP)**
+3. **File Transfer (FTP)**
+4. **Database Communication (MongoDB, MySQL)**
+
+TCP দরকার যেখানে:
+- Accuracy দরকার
+- ডেটা order এ দরকার
+- Error handling দরকার
+
+---
+
+## UDP দিয়ে বানানো যায় এমন Application:
+
+1. **Video/Audio Streaming** → Netflix, YouTube
+2. **VoIP (Voice over IP)** → Zoom, Skype, WhatsApp Call
+3. **Online Gaming** → Fast response দরকার
+4. **DNS (Domain Name Resolution)**
+
+UDP দরকার যেখানে:
+- Speed important
+- কিছু packet হারালেও সমস্যা নেই
+
+---
+
+## Node.js Context:
+Node.js তে তুমি `net` module দিয়ে TCP socket বানাতে পারো এবং `dgram` module দিয়ে UDP socket handle করতে পারো।
+
+---
+

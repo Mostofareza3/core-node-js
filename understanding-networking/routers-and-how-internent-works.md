@@ -1,4 +1,4 @@
-## ৭. ইন্টারনেট কিভাবে কাজ করে? (How the Internet Works)
+## ইন্টারনেট কিভাবে কাজ করে? (How the Internet Works)
 
 ### Step by Step:
 1. **Client Request:** তুমি Browser এ গিয়ে টাইপ করলে `www.example.com`
