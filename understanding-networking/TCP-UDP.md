@@ -1,5 +1,7 @@
 # TCP vs UDP (Node.js Context)
 
+#### Reffernce note (https://www.geeksforgeeks.org/differences-between-tcp-and-udp/)
+
 ## TCP কি?
 TCP মানে **Transmission Control Protocol**। এটা একটি **connection-oriented** protocol, অর্থাৎ ডেটা পাঠানোর আগে দুই device এর মধ্যে একটা connection establish হয়।
 
