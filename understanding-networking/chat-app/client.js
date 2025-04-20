@@ -48,7 +48,14 @@ const socket = net.createConnection(
             });
     
             const message = await rl.question("Enter a message:>> ");
-            socket.write(`${id}-message-${message}`);
+            if(message.startsWith("@")){
+                // private message
+                const targetId = message.split(" ")[0].substring(1);
+                const actualMessage = message.split(" ").slice(1).join(" ");
+                socket.write(`${id}-private-${targetId}-${actualMessage}`);
+            } else{
+                socket.write(`${id}-message-${message}`);
+            }
         };
         ask()
 
