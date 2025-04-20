@@ -1,5 +1,7 @@
 import net from "net";
 import readline from "readline/promises";
+import fs from "fs";
+import path from "path";
 
 const rl = readline.createInterface({
     input: process.stdin,
@@ -52,7 +54,11 @@ const socket = net.createConnection(
         // ask for message from user
         const ask = async () => {
             const message = await rl.question("Enter a message:>> ");
-            if(message.startsWith("@")){
+            if(message.startsWith("/send-file")){
+                
+
+            } 
+            else if(message.startsWith("@")){
                 // private message
                 const targetUsername = message.split(" ")[0].substring(1);
                 const actualMessage = message.split(" ").slice(1).join(" ");

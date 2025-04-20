@@ -1,4 +1,14 @@
 import net from "net";
+import fs from "fs/promises"
+import path from "path";
+
+
+var __dirname = "/Users/mostofareza/Desktop/Personal/core-node-js/understanding-networking/chat-app"
+async function makeDirectory(name) {
+    const projectFolder = path.join(__dirname, "files", name);
+    const dirCreation = await fs.mkdir(projectFolder, { recursive: true });
+    return dirCreation;
+}
 
 
 const server = net.createServer()
@@ -21,6 +31,7 @@ server.on("connection", (socket) => {
         if (dataString.startsWith("username")) {
             const username = dataString.split(':')[1]
             clientData.username = username;
+            makeDirectory(username)
 
             socket.write(`Welcome ${username}!\n`);
             clients.forEach(c => {
@@ -56,12 +67,11 @@ server.on("connection", (socket) => {
                 socket.write(`User ${targetUsername} not found or not online.`);
             }
         }
-
         else if (dataString.includes("-typing-start")) {
             const [sender, , targetUsername] = dataString.split("-");
             clients.forEach((client) => {
-                if (client.socket !== socket ) {
-                    if( client.username === targetUsername) {
+                if (client.socket !== socket) {
+                    if (client.username === targetUsername && dataString.includes("-private-")) {
                         // private message
                         client.socket.write(`${sender} is typing...`);
                     } else {
@@ -83,6 +93,8 @@ server.on("connection", (socket) => {
     socket.on('end', () => {
         clients.map((client) => {
             client.socket.write(`User ${client.username} left!`)
+            // remove the corresponding user file
+            fs.rmdir(`${__dirname}/files/${client.username}`)
         })
     })
 
