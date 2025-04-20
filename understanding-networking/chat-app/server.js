@@ -1,7 +1,7 @@
 import net from "net";
 import fs from "fs/promises"
 import path from "path";
-
+import { createWriteStream } from "fs";
 
 var __dirname = "/Users/mostofareza/Desktop/Personal/core-node-js/understanding-networking/chat-app"
 async function makeDirectory(name) {
@@ -10,6 +10,8 @@ async function makeDirectory(name) {
     return dirCreation;
 }
 
+// File transfer states
+const fileTransfers = new Map();
 
 const server = net.createServer()
 // array of client socket
@@ -45,6 +47,99 @@ server.on("connection", (socket) => {
             socket.write("Please set your username first.\n");
             return;
         }
+        
+        // File transfer handling
+        if (dataString.startsWith("file-transfer-start")) {
+            // Format: file-transfer-start:targetUsername:fileName:fileSize
+            const [_, targetUsername, fileName, fileSize] = dataString.split(":");
+            const targetClient = clients.find(c => c.username === targetUsername);
+            
+            if (!targetClient) {
+                socket.write(`User ${targetUsername} not found or not online.\n`);
+                return;
+            }
+            
+            const transferId = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+            const filePath = path.join(__dirname, "files", targetUsername, fileName);
+            
+            fileTransfers.set(transferId, {
+                sender: clientData.username,
+                receiver: targetUsername,
+                fileName: fileName,
+                filePath: filePath,
+                fileSize: parseInt(fileSize),
+                bytesReceived: 0,
+                writeStream: createWriteStream(filePath)
+            });
+            
+            socket.write(`file-transfer-ready:${transferId}\n`);
+            targetClient.socket.write(`${clientData.username} is sending you a file: ${fileName}\n`);
+            
+            return;
+        }
+        
+        if (dataString.startsWith("file-transfer-data")) {
+            // Format: file-transfer-data:transferId
+            const [_, transferId] = dataString.split(":");
+            const transfer = fileTransfers.get(transferId);
+            
+            if (!transfer) {
+                socket.write(`Invalid file transfer ID.\n`);
+                return;
+            }
+            
+            // Set socket to binary mode for receiving file data
+            socket.pause();
+            socket.transferId = transferId;
+            socket.isReceivingFile = true;
+            socket.write(`ready-for-binary\n`);
+            
+            return;
+        }
+        
+        if (socket.isReceivingFile && socket.transferId) {
+            const transfer = fileTransfers.get(socket.transferId);
+            if (transfer) {
+                transfer.bytesReceived += data.length;
+                transfer.writeStream.write(data);
+                
+                // Check if file transfer is complete
+                if (transfer.bytesReceived >= transfer.fileSize) {
+                    transfer.writeStream.end();
+                    fileTransfers.delete(socket.transferId);
+                    socket.isReceivingFile = false;
+                    socket.transferId = null;
+                    
+                    socket.write(`File transfer completed.\n`);
+                    
+                    const targetClient = clients.find(c => c.username === transfer.receiver);
+                    if (targetClient) {
+                        targetClient.socket.write(`File received from ${transfer.sender}: ${transfer.fileName}\n`);
+                    }
+                }
+                return;
+            }
+        }
+        
+        if (dataString.startsWith("file-transfer-cancel")) {
+            const [_, transferId] = dataString.split(":");
+            const transfer = fileTransfers.get(transferId);
+            
+            if (transfer) {
+                transfer.writeStream.end();
+                fileTransfers.delete(transferId);
+                
+                const targetClient = clients.find(c => c.username === transfer.receiver);
+                if (targetClient) {
+                    targetClient.socket.write(`File transfer from ${transfer.sender} was cancelled.\n`);
+                }
+                
+                socket.write(`File transfer cancelled.\n`);
+            }
+            
+            return;
+        }
+        
         if (dataString.includes("-message-")) {
             const id = dataString.split("-")[0];
             const message = dataString.split("-message-")[1];
@@ -91,11 +186,31 @@ server.on("connection", (socket) => {
     });
 
     socket.on('end', () => {
-        clients.map((client) => {
-            client.socket.write(`User ${client.username} left!`)
-            // remove the corresponding user file
-            fs.rmdir(`${__dirname}/files/${client.username}`)
-        })
+        // Clean up any file transfers
+        for (const [transferId, transfer] of fileTransfers.entries()) {
+            if (transfer.sender === clientData.username || transfer.receiver === clientData.username) {
+                transfer.writeStream.end();
+                fileTransfers.delete(transferId);
+            }
+        }
+        
+        clients.forEach((client) => {
+            if (client.socket !== socket && clientData.username) {
+                client.socket.write(`User ${clientData.username} left!`);
+            }
+        });
+        
+        // Remove client from the list
+        const index = clients.findIndex(c => c.socket === socket);
+        if (index !== -1) {
+            const username = clients[index].username;
+            if (username) {
+                // Remove the corresponding user directory
+                fs.rmdir(path.join(__dirname, "files", username), { recursive: true })
+                    .catch(err => console.error(`Error removing directory: ${err}`));
+            }
+            clients.splice(index, 1);
+        }
     })
 
     clients.push(clientData)

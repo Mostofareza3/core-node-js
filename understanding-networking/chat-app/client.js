@@ -3,6 +3,7 @@ import readline from "readline/promises";
 import fs from "fs";
 import path from "path";
 
+
 const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout
@@ -27,6 +28,7 @@ const moveCursor = (dx, dy) => {
 let id;
 let username;
 let typing = false;
+let activeFileTransfer = null;
 
 // Setup typing detection only once to avoid memory leaks
 process.stdin.setMaxListeners(20); // Increase max listeners to avoid warning
@@ -55,28 +57,112 @@ const socket = net.createConnection(
         const ask = async () => {
             const message = await rl.question("Enter a message:>> ");
             if(message.startsWith("/send-file")){
+                // Format: /send-file username filepath
+                const parts = message.split(" ");
+                if (parts.length < 3) {
+                    console.log("Usage: /send-file <username> <filepath>");
+                    ask();
+                    return;
+                }
                 
-
+                const targetUsername = parts[1];
+                const filePath = parts.slice(2).join(" ");
+                
+                try {
+                    // Check if file exists
+                    const stats = fs.statSync(filePath);
+                    if (!stats.isFile()) {
+                        console.log("Not a file or file doesn't exist.");
+                        ask();
+                        return;
+                    }
+                    
+                    const fileName = path.basename(filePath);
+                    const fileSize = stats.size;
+                    
+                    // Start file transfer protocol
+                    socket.write(`file-transfer-start:${targetUsername}:${fileName}:${fileSize}`);
+                    
+                    // Store the file path for when we get the ready signal
+                    activeFileTransfer = {
+                        filePath: filePath,
+                        fileName: fileName,
+                        fileSize: fileSize,
+                        targetUser: targetUsername
+                    };
+                    
+                    console.log(`Initiating file transfer of ${fileName} (${fileSize} bytes) to ${targetUsername}...`);
+                    // success message
+                    console.log("File transfer initiated successfully!");
+                } catch (err) {
+                    console.error("Error accessing file:", err.message);
+                    ask();
+                }
             } 
             else if(message.startsWith("@")){
                 // private message
                 const targetUsername = message.split(" ")[0].substring(1);
                 const actualMessage = message.split(" ").slice(1).join(" ");
                 socket.write(`${username}-private-${targetUsername}-${actualMessage}`);
+                ask();
             } else{
                 socket.write(`${username}-message-${message}`);
+                ask();
             }
         };
 
 
         socket.on("data", async (data) => {
-            if (data.toString("utf-8") === "set-username"){
+            const dataString = data.toString("utf-8").trim();
+            
+            // Handle file transfer responses
+            if (dataString.startsWith("file-transfer-ready")) {
+                const transferId = dataString.split(":")[1];
+                
+                if (activeFileTransfer) {
+                    console.log(`Starting file transfer with ID: ${transferId}`);
+                    socket.write(`file-transfer-data:${transferId}`);
+                }
+                return;
+            }
+            
+            if (dataString === "ready-for-binary" && activeFileTransfer) {
+                // Send the file in chunks
+                const fileStream = fs.createReadStream(activeFileTransfer.filePath);
+                
+                fileStream.on('data', (chunk) => {
+                    const canContinue = socket.write(chunk);
+                    if (!canContinue) {
+                        fileStream.pause();
+                        socket.once('drain', () => {
+                            fileStream.resume();
+                        });
+                    }
+                });
+                
+                fileStream.on('end', () => {
+                    console.log("File data sent completely!");
+                    activeFileTransfer = null;
+                    ask();
+                });
+                
+                fileStream.on('error', (err) => {
+                    console.error("Error reading file:", err.message);
+                    socket.write(`file-transfer-cancel:${transferId}`);
+                    activeFileTransfer = null;
+                    ask();
+                });
+                
+                return;
+            }
+            
+            if (dataString === "set-username"){
                 username = await rl.question("Enter your username: ");
                 socket.write(`username:${username}`);
                 return;  
             }
-            else if (data.toString("utf-8").substring(0, 2) === "id") {
-                id = data.toString("utf-8").substring(3)
+            else if (dataString.substring(0, 2) === "id") {
+                id = dataString.substring(3)
                 console.log(`your id is ${id}!\n`)
             } else {
                 // when getting message
@@ -87,7 +173,7 @@ const socket = net.createConnection(
                 // clear line
                 await clearLine(0)
                 // Only print if the message is not empty
-                const message = data.toString("utf-8");
+                const message = dataString;
                 if (message.trim() !== "") {
                     console.log(message)
                     if (!message.includes("is typing")) {
@@ -104,4 +190,9 @@ const socket = net.createConnection(
 
 socket.on("end", () => {
     console.log("Connection was ended!");
+});
+
+socket.on("error", (err) => {
+    console.error("Socket error:", err.message);
+    process.exit(1);
 });
