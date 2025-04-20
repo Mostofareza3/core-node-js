@@ -93,6 +93,7 @@ server.on("connection", (socket) => {
             socket.transferId = transferId;
             socket.isReceivingFile = true;
             socket.write(`ready-for-binary\n`);
+            socket.resume(); // Resume the socket to receive binary data
             
             return;
         }
@@ -101,7 +102,15 @@ server.on("connection", (socket) => {
             const transfer = fileTransfers.get(socket.transferId);
             if (transfer) {
                 transfer.bytesReceived += data.length;
-                transfer.writeStream.write(data);
+                
+                // Write to file with back-pressure handling
+                const canContinue = transfer.writeStream.write(data);
+                if (!canContinue) {
+                    socket.pause();
+                    transfer.writeStream.once('drain', () => {
+                        socket.resume();
+                    });
+                }
                 
                 // Check if file transfer is complete
                 if (transfer.bytesReceived >= transfer.fileSize) {

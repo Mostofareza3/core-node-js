@@ -121,6 +121,7 @@ const socket = net.createConnection(
                 
                 if (activeFileTransfer) {
                     console.log(`Starting file transfer with ID: ${transferId}`);
+                    activeFileTransfer.transferId = transferId;
                     socket.write(`file-transfer-data:${transferId}`);
                 }
                 return;
@@ -129,6 +130,7 @@ const socket = net.createConnection(
             if (dataString === "ready-for-binary" && activeFileTransfer) {
                 // Send the file in chunks
                 const fileStream = fs.createReadStream(activeFileTransfer.filePath);
+                const transferId = activeFileTransfer.transferId;
                 
                 fileStream.on('data', (chunk) => {
                     const canContinue = socket.write(chunk);
