@@ -17,15 +17,31 @@ server.on("connection", (socket)=>{
     socket.write(`id-${clientId}`)
 
 
-
     socket.on("data", (data) => {
-        const dataString = data.toString('utf-8')
-        const id = dataString.substring(0, dataString.indexOf("-"))
-        const message = dataString.substring(dataString.indexOf("-message-")+9)
-        clients.map((client) => {
-            client.socket.write(`> User ${id}: ${message}`)
-        })
-    })
+        const dataString = data.toString("utf-8");
+
+        if (dataString.includes("-message-")) {
+            const id = dataString.split("-")[0];
+            const message = dataString.split("-message-")[1];
+            clients.forEach((client) => {
+                client.socket.write(`> User ${id}: ${message}`);
+            });
+        } else if (dataString.includes("-typing-start")) {
+            const id = dataString.split("-")[0];
+            clients.forEach((client) => {
+                if (client.id !== id) {
+                    client.socket.write(`User ${id} is typing...`);
+                }
+            });
+        } else if (dataString.includes("-typing-end")) {
+            const id = dataString.split("-")[0];
+            clients.forEach((client) => {
+                if (client.id !== id) {
+                    client.socket.write(""); 
+                }
+            });
+        }
+    });
 
     socket.on('end', ()=>{
         clients.map((client)=>{
