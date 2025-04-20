@@ -6,20 +6,41 @@ const server = net.createServer()
 const clients = []
 
 server.on("connection", (socket) => {
-    console.log("A new connectioin to the server")
-    const clientId = clients.length + 1;
+    console.log("New client connected!");
+    socket.write("set-username")
 
-    clients.map((client) => {
-        client.socket.write(`User ${clientId} joined!`)
-    })
+    const clientData = {
+        id: clients.length + 1,
+        socket,
+        username: null
+    };
+
+    // clients.map((client) => {
+    //     client.socket.write(`User ${clientId} joined!`)
+    // })
 
 
-    socket.write(`id-${clientId}`)
+    // socket.write(`id-${clientId}`)
 
 
     socket.on("data", (data) => {
-        const dataString = data.toString("utf-8");
+        const dataString = data.toString("utf-8").trim();
+        if (dataString.startsWith("username")) {
+            const username = dataString.split(':')[1]
+            clientData.username = username;
 
+            socket.write(`Welcome ${username}!\n`);
+            clients.forEach(c => {
+                if (c.socket !== socket && c.username)
+                    c.socket.write(`${username} has joined!\n`);
+            });
+            return;
+        }
+        // check if username set
+        if (!clientData.username) {
+            socket.write("Please set your username first.\n");
+            return;
+        }
         if (dataString.includes("-message-")) {
             const id = dataString.split("-")[0];
             const message = dataString.split("-message-")[1];
@@ -55,11 +76,11 @@ server.on("connection", (socket) => {
 
     socket.on('end', () => {
         clients.map((client) => {
-            client.socket.write(`User ${clientId} left!`)
+            client.socket.write(`User ${client.username} left!`)
         })
     })
 
-    clients.push({ id: clientId.toString(), socket })
+    clients.push(clientData)
 })
 
 server.listen(3333, "127.0.0.1", () => {
