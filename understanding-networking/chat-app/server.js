@@ -15,13 +15,6 @@ server.on("connection", (socket) => {
         username: null
     };
 
-    // clients.map((client) => {
-    //     client.socket.write(`User ${clientId} joined!`)
-    // })
-
-
-    // socket.write(`id-${clientId}`)
-
 
     socket.on("data", (data) => {
         const dataString = data.toString("utf-8").trim();
@@ -45,30 +38,43 @@ server.on("connection", (socket) => {
             const id = dataString.split("-")[0];
             const message = dataString.split("-message-")[1];
             clients.forEach((client) => {
-                client.socket.write(`> User ${id}: ${message}`);
+                if (client.socket === socket) {
+                    client.socket.write(`me: ${message}`);
+                } else {
+                    client.socket.write(`${id}: ${message}`);
+                }
             });
         } else if (dataString.includes("-private-")) {
-            const [id, , targetId, ...rest] = dataString.split("-");
+            const [sender, , targetUsername, ...rest] = dataString.split("-");
             const message = rest.join("-");
-            const targetClient = clients.find((c) => c.id === targetId);
+            const targetClient = clients.find((c) => c.username === targetUsername);
 
             if (targetClient) {
-                targetClient.socket.write(`[Private] User ${id}: ${message}`);
+                targetClient.socket.write(`[Private] ${sender}: ${message}`);
+                socket.write(`[Private to ${targetClient.username}]: ${message}`);
+            } else {
+                socket.write(`User ${targetUsername} not found or not online.`);
             }
         }
 
         else if (dataString.includes("-typing-start")) {
-            const id = dataString.split("-")[0];
+            const [sender, , targetUsername] = dataString.split("-");
             clients.forEach((client) => {
-                if (client.id !== id) {
-                    client.socket.write(`User ${id} is typing...`);
+                if (client.socket !== socket ) {
+                    if( client.username === targetUsername) {
+                        // private message
+                        client.socket.write(`${sender} is typing...`);
+                    } else {
+                        // public message
+                        client.socket.write(`${sender} is typing...`);
+                    }
                 }
             });
         } else if (dataString.includes("-typing-end")) {
             const id = dataString.split("-")[0];
             clients.forEach((client) => {
-                if (client.id !== id) {
-                    client.socket.write("");
+                if (client.socket !== socket) {
+                    client.socket.write(``);
                 }
             });
         }

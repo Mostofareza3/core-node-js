@@ -24,6 +24,26 @@ const moveCursor = (dx, dy) => {
 
 let id;
 let username;
+let typing = false;
+
+// Setup typing detection only once to avoid memory leaks
+process.stdin.setMaxListeners(20); // Increase max listeners to avoid warning
+
+process.stdin.on("data", (chunk) => {
+    if (!typing && username) {
+        typing = true;
+        socket.write(`${username}-typing-start`);
+    }
+
+    // stop typing if no key is pressed for 2s
+    clearTimeout(globalThis._typingTimeout);
+    globalThis._typingTimeout = setTimeout(() => {
+        typing = false;
+        if (username) {
+            socket.write(`${username}-typing-end`);
+        }
+    }, 2000);
+});
 
 const socket = net.createConnection(
     { port: 3333, host: "127.0.0.1" },
@@ -31,31 +51,14 @@ const socket = net.createConnection(
 
         // ask for message from user
         const ask = async () => {
-            let typing = false;
-    
-            // keypress listener
-            process.stdin.on("data", (chunk) => {
-                if (!typing) {
-                    typing = true;
-                    socket.write(`${username}-typing-start`);
-                }
-    
-                // stop typing if no key is pressed for 2s
-                clearTimeout(globalThis._typingTimeout);
-                globalThis._typingTimeout = setTimeout(() => {
-                    typing = false;
-                    socket.write(`${username}-typing-end`);
-                }, 2000);
-            });
-    
             const message = await rl.question("Enter a message:>> ");
             if(message.startsWith("@")){
                 // private message
-                const targetId = message.split(" ")[0].substring(1);
+                const targetUsername = message.split(" ")[0].substring(1);
                 const actualMessage = message.split(" ").slice(1).join(" ");
-                socket.write(`${id}-private-${targetId}-${actualMessage}`);
+                socket.write(`${username}-private-${targetUsername}-${actualMessage}`);
             } else{
-                socket.write(`${id}-message-${message}`);
+                socket.write(`${username}-message-${message}`);
             }
         };
 
@@ -77,7 +80,14 @@ const socket = net.createConnection(
                 await moveCursor(0, -1)
                 // clear line
                 await clearLine(0)
-                console.log(data.toString("utf-8"))
+                // Only print if the message is not empty
+                const message = data.toString("utf-8");
+                if (message.trim() !== "") {
+                    console.log(message)
+                    if (!message.includes("is typing")) {
+                        console.log("===========")
+                    }
+                }
             }
 
             ask()
