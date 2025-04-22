@@ -1,31 +1,45 @@
-import net from "net"
-import fs from "fs/promises"
+const net = require("net");
+const fs = require("node:fs/promises");
 
-const server = net.createServer(() => { })
-let fileHandle, fileStream;
+const server = net.createServer(() => {});
 
 server.on("connection", (socket) => {
-    // when new connection it will log
-    console.log("New connection")
-    // when client send data we can grab data here
-    socket.on("data", async (data) => {
-        fileHandle = await fs.open(`storage/test.txt`, "w")
-        // we can use here pipeing but for practicing perpose we are doing manually
-        fileStream = fileHandle.createWriteStream()
-        // write data to the destination
-        fileStream.write(data);
-    })
+  console.log("New connection!");
+  let fileHandle, fileWriteStream;
 
-    // Handle connection end
-    socket.on("end", () => {
-        console.log("connection ended!")
-        if (fileHandle) {
-            fileHandle.close()
-        }
-    })
-})
+  socket.on("data", async (data) => {
+    if (!fileHandle) {
+      socket.pause(); // pause receiving data from the client
 
-// IPv6 throwback url
+      const indexOfDivider = data.indexOf("-------");
+      const fileName = data.subarray(10, indexOfDivider).toString("utf-8");
+
+      fileHandle = await fs.open(`storage/${fileName}`, "w");
+      fileWriteStream = fileHandle.createWriteStream(); // the stream to write to
+
+      // Writing to our destination file, discard the headers
+      fileWriteStream.write(data.subarray(indexOfDivider + 7));
+
+      socket.resume(); // resume receiving data from the client
+      fileWriteStream.on("drain", () => {
+        socket.resume();
+      });
+    } else {
+      if (!fileWriteStream.write(data)) {
+        socket.pause();
+      }
+    }
+  });
+
+  // This end event happens when the client.js file ends the socket
+  socket.on("end", () => {
+    if (fileHandle) fileHandle.close();
+    fileHandle = undefined;
+    fileWriteStream = undefined;
+    console.log("Connection ended!");
+  });
+});
+
 server.listen(5050, "::1", () => {
-    console.log("Uploader server lisned on:", server.address())
-})
+  console.log("Uploader server opened on", server.address());
+});
