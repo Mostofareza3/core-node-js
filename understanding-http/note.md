@@ -381,3 +381,329 @@ Connection: keep-alive
 | HTTP/2 | Single connection দিয়ে multiple parallel request যায় |
 
 ---
+
+
+
+
+
+
+# 🌐 HTTP MIME Type (Media Type) — Explained in Bangla-English Mix
+
+---
+
+## 📌 MIME Type / Media Type কি?
+
+**MIME = Multipurpose Internet Mail Extensions**
+
+Web e কোনো file বা data browser/server কে ঠিকভাবে বোঝাতে হলে, আমরা একটা *content type* declare করি। এই content type ই হলো MIME type।
+
+> Example: `text/html`, `application/json`, `image/png` etc.
+
+---
+
+## ❓ কবে MIME type use হয়?
+
+MIME type declare করা হয় HTTP header এ, content এর nature বোঝানোর জন্য।
+
+### 👉 Server → Client:
+```http
+Content-Type: application/json
+
+এতে Browser/Client বুঝে নেয় response এর body টা কী ধরণের data — HTML? JSON? Image?
+
+👉 Client → Server:
+
+Client ও request পাঠাতে MIME type দিতে পারে:
+
+Content-Type: application/x-www-form-urlencoded
+Content-Type: multipart/form-data
+Content-Type: application/json
+
+এভাবে Server বুঝে নেয় user কী data পাঠাচ্ছে।
+
+⸻
+
+📥 Structure of MIME Type
+
+type/subtype
+
+Example:
+
+Type	Subtype	Meaning
+text	html	HTML Document
+text	plain	Plain Text
+application	json	JSON Data
+image	png	PNG Image
+audio	mpeg	Audio File
+video	mp4	MP4 Video
+multipart	form-data	For file upload
+
+
+
+⸻
+
+🎯 Common MIME Types
+
+MIME Type	Description
+text/html	HTML Webpage
+application/json	JSON Data
+application/javascript	JS Files
+text/css	CSS Stylesheet
+image/jpeg	JPG Image
+image/png	PNG Image
+audio/mpeg	MP3 Audio
+video/mp4	MP4 Video
+application/pdf	PDF File
+multipart/form-data	File Upload Form
+
+
+
+⸻
+
+🧪 Real World Example (Node.js)
+
+const http = require('http');
+
+const server = http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/html' });
+  res.end('<h1>Hello World</h1>');
+});
+
+server.listen(3000);
+
+🧠 Browser এখন বুঝবে এটা একটা HTML page.
+
+⸻
+
+🧭 MIME Type এর Class (Type)
+
+MIME Types are categorized under few Media Type Classes:
+
+Class (Type)	Use
+text/	Human readable text
+image/	Image files (jpeg, png, etc)
+audio/	Audio files
+video/	Video files
+application/	Program-specific data (json, pdf, octet-stream)
+multipart/	Mixed contents, mostly for forms
+message/	For email/message formats
+font/	Fonts like woff, ttf
+model/	3D models, etc
+
+
+
+⸻
+
+📌 MIME Type এর importance
+	•	✅ Helps browser decide what to do with a response
+	•	✅ Server validation for uploads
+	•	✅ Content negotiation
+	•	✅ Secure communication (prevent wrong interpretation)
+
+⸻
+
+🧨 Bonus Tip: Unknown Type?
+
+Use this:
+
+Content-Type: application/octet-stream
+
+→ Generic binary stream handle করতে।
+
+⸻
+
+🔚 Summary
+	•	MIME Type বোঝায় content এর type
+	•	HTTP header এ set হয় Content-Type
+	•	দুইদিকে use হয়: server → client & client → server
+	•	Human + machine দুইজনই বুঝতে পারে কেমন data handle করতে হবে
+	•	MIME class/type/subtype অনুযায়ী data handle করে browser/API
+
+⸻
+
+
+
+
+
+# 🌐 Understanding HTTP Methods (Bangla-English Mix)
+
+---
+
+## 🧠 HTTP Method কী?
+
+HTTP method মানে হলো server কে request করার সময় — তুমি বলতে পারো:
+"ভাই, আমি কি করতে চাই?"
+
+Each HTTP method server কে বলে:
+
+- Data চাই?
+- Data বানাতে চাই?
+- Data Update করতে চাই?
+- Data Delete করতে চাই?
+
+---
+
+## 🔥 Idempotency Concept
+
+**Idempotency** = "এক কাজ একবার বা হাজারবার করলেও একই ফলাফল আসবে"
+
+> Simple: যদি multiple time request পাঠাও, same result থাকবে।
+
+---
+
+### 🧩 Idempotent Example:
+
+- `deleteFileOverOneGigabyte()`
+  - যদি ১বার delete করো, file মুছে যাবে।
+  - আবার delete করলে আর কিছু হবে না।
+  - **✅ Idempotent**
+
+- `deleteBiggestFile()`
+  - প্রতিবার call করলে biggest file খুঁজে খুঁজে delete করবে।
+  - আলাদা file delete হতে পারে।
+  - **❌ Not Idempotent**
+
+---
+
+## 📜 Main HTTP Methods
+
+| Method | Purpose | Request Body | Response Body | Idempotent |
+|--------|---------|--------------|---------------|------------|
+| GET | Data Request | No | Yes | Yes |
+| POST | Create Resource / Perform Action | Yes | Yes | No |
+| PUT | Create or Fully Update | Yes | Optional | Yes |
+| PATCH | Partial Update | Yes | Optional | No |
+| DELETE | Remove Resource | Optional | Optional | Yes |
+| HEAD | Like GET but no body (only headers) | No | No | Yes |
+| OPTIONS | Ask server what methods are allowed | No | Optional | Yes |
+
+---
+
+## 🏗️ Details of Methods:
+
+### ✅ GET
+- Server থেকে **data আনো**।
+- Body পাঠানো হয় না।
+- Response এ data আসে।
+- **Idempotent** (একই request একাধিক বার করলেও result same থাকে।)
+
+```bash
+GET /api/users
+
+
+
+⸻
+
+✅ POST
+	•	Server এ নতুন resource create করো বা action perform করো।
+	•	Body থাকে।
+	•	Response body থাকতে পারে।
+	•	Not Idempotent (দুবার POST করলে দুইটা resource create হতে পারে।)
+
+POST /api/users
+Body: { "name": "John" }
+
+
+
+⸻
+
+✅ PUT
+	•	Server এ পুরো resource create বা replace করো।
+	•	Body থাকে।
+	•	Response optional।
+	•	Idempotent (একই data দিয়ে PUT করলে বারবার same effect.)
+
+PUT /api/user/123
+Body: { "name": "Jane" }
+
+
+
+⸻
+
+✅ PATCH
+	•	Resource এর partial update।
+	•	Body থাকে।
+	•	Response optional।
+	•	Not Idempotent (depnds on implementation, but usually not pure idempotent.)
+
+PATCH /api/user/123
+Body: { "name": "UpdatedName" }
+
+
+
+⸻
+
+✅ DELETE
+	•	Server থেকে resource delete করো।
+	•	Body থাকতে পারে বা নাও পারে।
+	•	Idempotent (একবার delete করলে, পরে আর delete করার কিছু থাকে না।)
+
+DELETE /api/user/123
+
+
+
+⸻
+
+✅ HEAD
+	•	GET এর মতো — শুধু header আনে, body আনেনা।
+	•	Useful to check resource exists বা not without downloading.
+
+HEAD /api/user/123
+
+
+
+⸻
+
+✅ OPTIONS
+	•	Server কে জিজ্ঞেস করো:
+	•	“এই URL এ কোন কোন HTTP method support করে?”
+	•	Mainly CORS (Cross-Origin Resource Sharing) এর context এ use হয়।
+
+OPTIONS /api/user/123
+
+
+
+⸻
+
+🔥 Extra HTTP Methods (Less Common but Useful)
+
+Method	Description
+CONNECT	Establish a tunnel (Proxy/SSL communication setup)
+TRACE	Diagnostic method (loopback test)
+PROPFIND	Used in WebDAV, to fetch properties of resources
+COPY	Copy a resource (WebDAV)
+MOVE	Move a resource (WebDAV)
+
+
+
+⸻
+
+🧊 Real Life Example (POST vs PUT):
+	•	POST /users → Create new user.
+(New ID generated automatically.)
+	•	PUT /users/123 → Overwrite user with ID 123.
+(Resource fully updated বা নতুন বানানো হবে।)
+
+⸻
+
+🧠 Quick Mnemonic:
+
+Method	Action Word
+GET	“Give me”
+POST	“Create this”
+PUT	“Replace this”
+PATCH	“Update this piece”
+DELETE	“Remove this”
+
+
+
+⸻
+
+🔚 Summary:
+	•	HTTP methods = human + machine understandable way to communicate.
+	•	Idempotent method = multiple request এ same result (like GET, PUT, DELETE).
+	•	POST = mostly non-idempotent (new resource create করে)।
+	•	CORS, preflight request এর context এ OPTIONS/HEAD important.
+
+⸻
+

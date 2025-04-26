@@ -1,74 +1,140 @@
-# What Happens to TCP Connection After Message Exchange?
 
-HTTP communication এর পরে TCP connection এর কী হয়? এটাই আমরা এই note-এ clear করবো।
 
----
 
-## 🔄 Message Exchange sesh hole TCP connection er ki hoy?
-
-যখন HTTP client ও server message exchange (request-response) complete করে:
-
-- Default behaviour → **TCP connection close হয়ে যায়**।
-  
-  কারণ HTTP 1.0 এ প্রতিটা request এর জন্য আলাদা TCP connection establish হতো। এটা inefficient।
+# 🌐 HTTP MIME Type (Media Type) — Explained in Bangla-English Mix
 
 ---
 
-## 🔁 কিন্তু TCP connection কি বার বার খুলে বন্ধ করতে হবে?
+## 📌 MIME Type / Media Type কি?
 
-না! আমরা চাইলে **TCP connection alive রাখতে পারি**, যেনো পরবর্তী request গুলো একই connection এর মাধ্যমে যেতে পারে। এভাবে:
+**MIME = Multipurpose Internet Mail Extensions**
 
-- Time & resource save হয়
-- Latency কমে
+Web e কোনো file বা data browser/server কে ঠিকভাবে বোঝাতে হলে, আমরা একটা *content type* declare করি। এই content type ই হলো MIME type।
+
+> Example: `text/html`, `application/json`, `image/png` etc.
 
 ---
 
-## ✅ কিভাবে TCP connection Alive রাখা যায়?
+## ❓ কবে MIME type use হয়?
 
-**HTTP Header:**
+MIME type declare করা হয় HTTP header এ, content এর nature বোঝানোর জন্য।
+
+### 👉 Server → Client:
 ```http
-Connection: keep-alive
-```
+Content-Type: application/json
 
-### Keep-Alive মানে:
-- TCP connection একবার open হলে তা কিছুক্ষণ open থাকবেই
-- Multiple HTTP requests/responses একই TCP connection এর উপর যেতে পারবে
-- Client অথবা server চাইলে connection close করতে পারে
+এতে Browser/Client বুঝে নেয় response এর body টা কী ধরণের data — HTML? JSON? Image?
 
----
+👉 Client → Server:
 
-## ⛔ যদি Close করতে চাই?
+Client ও request পাঠাতে MIME type দিতে পারে:
 
-তাহলে simply header-এ বলবো:
-```http
-Connection: close
-```
+Content-Type: application/x-www-form-urlencoded
+Content-Type: multipart/form-data
+Content-Type: application/json
 
-### Example (HTTP 1.1):
-```
-GET /index.html HTTP/1.1
-Host: example.com
-Connection: keep-alive
-```
+এভাবে Server বুঝে নেয় user কী data পাঠাচ্ছে।
 
----
+⸻
 
-## 🧠 Recap:
+📥 Structure of MIME Type
 
-| কাজ | কি হচ্ছে |
-|-----|------------|
-| Request-response শেষ | TCP connection by default close হয়ে যায় |
-| যদি চাও alive রাখতে | `Connection: keep-alive` ব্যবহার করো |
-| Close করতে চাও | `Connection: close` পাঠাও |
+type/subtype
 
----
+Example:
 
-## ⚙️ Bonus: HTTP Versions & Keep-Alive
+Type	Subtype	Meaning
+text	html	HTML Document
+text	plain	Plain Text
+application	json	JSON Data
+image	png	PNG Image
+audio	mpeg	Audio File
+video	mp4	MP4 Video
+multipart	form-data	For file upload
 
-| HTTP Version | Behaviour |
-|--------------|-----------|
-| HTTP/1.0 | Default: Connection close, manually keep-alive পাঠাতে হয় |
-| HTTP/1.1 | Default: Connection keep-alive, manually close পাঠাতে হয় |
-| HTTP/2 | Single connection দিয়ে multiple parallel request যায় |
+
+
+⸻
+
+🎯 Common MIME Types
+
+MIME Type	Description
+text/html	HTML Webpage
+application/json	JSON Data
+application/javascript	JS Files
+text/css	CSS Stylesheet
+image/jpeg	JPG Image
+image/png	PNG Image
+audio/mpeg	MP3 Audio
+video/mp4	MP4 Video
+application/pdf	PDF File
+multipart/form-data	File Upload Form
+
+
+
+⸻
+
+🧪 Real World Example (Node.js)
+
+const http = require('http');
+
+const server = http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/html' });
+  res.end('<h1>Hello World</h1>');
+});
+
+server.listen(3000);
+
+🧠 Browser এখন বুঝবে এটা একটা HTML page.
+
+⸻
+
+🧭 MIME Type এর Class (Type)
+
+MIME Types are categorized under few Media Type Classes:
+
+Class (Type)	Use
+text/	Human readable text
+image/	Image files (jpeg, png, etc)
+audio/	Audio files
+video/	Video files
+application/	Program-specific data (json, pdf, octet-stream)
+multipart/	Mixed contents, mostly for forms
+message/	For email/message formats
+font/	Fonts like woff, ttf
+model/	3D models, etc
+
+
+
+⸻
+
+📌 MIME Type এর importance
+	•	✅ Helps browser decide what to do with a response
+	•	✅ Server validation for uploads
+	•	✅ Content negotiation
+	•	✅ Secure communication (prevent wrong interpretation)
+
+⸻
+
+🧨 Bonus Tip: Unknown Type?
+
+Use this:
+
+Content-Type: application/octet-stream
+
+→ Generic binary stream handle করতে।
+
+⸻
+
+🔚 Summary
+	•	MIME Type বোঝায় content এর type
+	•	HTTP header এ set হয় Content-Type
+	•	দুইদিকে use হয়: server → client & client → server
+	•	Human + machine দুইজনই বুঝতে পারে কেমন data handle করতে হবে
+	•	MIME class/type/subtype অনুযায়ী data handle করে browser/API
+
+⸻
+
+
 
 ---
