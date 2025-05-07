@@ -1,113 +1,117 @@
 # Understanding Pipes and Output Redirections
 
-Unix/Linux based systems provide powerful tools for controlling input and output using **pipes** and **redirection**. These tools are essential for shell scripting, CLI utilities, and understanding how command-line programs communicate.
+Terminal use করতে গেলে একটা powerful concept হচ্ছে: **pipes (|)** আর **output redirection (`>`, `>>`, `<`)**। চলো এগুলো কে সহজভাবে বোঝার চেষ্টা করি।
 
 ---
 
-## 🔁 Pipes (`|`)
+## 🔹 Output Redirection
 
-### 📌 What is a Pipe?
+### ➤ `>` (Single Redirect)
 
-A **pipe** (`|`) takes the output (stdout) of one command and passes it as input (stdin) to another command.
-
-### 📋 Syntax:
+এইটা দিয়ে তুমি একটা command এর output একটা file এ pathao:
 
 ```bash
-command1 | command2
+ls > file-list.txt
 ```
 
-### 🔧 Example:
+📌 যদি file না থাকে, create করবে। থাকে, তাহলে **puraton ta replace** করে output likhbe।
+
+### ➤ `>>` (Append)
+
+এটা আগের data রেখে **শেষে নতুন output add** করে:
 
 ```bash
-cat file.txt | grep 'hello'
+echo "New line" >> notes.txt
 ```
 
-Explanation: `cat` reads the file and passes it to `grep`, which filters lines containing "hello".
+### ➤ `<` (Input Redirect)
 
-### 🧠 Real Use Cases:
-
-* Combine commands without intermediate files
-* Process large outputs using filters like `grep`, `awk`, `cut`, `sort`
-
----
-
-## 🔁 Output Redirection (`>` and `>>`)
-
-### `>` (Overwrite Output)
-
-Redirects standard output to a file, replacing the file’s contents.
+File এর ভিতরের content কে **input** হিসেবে pathano হয়:
 
 ```bash
-echo "Hello" > hello.txt
-```
-
-### `>>` (Append Output)
-
-Appends standard output to the end of a file.
-
-```bash
-echo "World" >> hello.txt
+sort < numbers.txt
 ```
 
 ---
 
-## 🔁 Input Redirection (`<`)
+## 🔹 Standard Streams
 
-Takes input for a command from a file instead of standard input.
+Unix এ ৩ ধরণের stream থাকে:
+
+| Stream   | Description     | File Descriptor |
+| -------- | --------------- | --------------- |
+| `stdin`  | Standard Input  | `0`             |
+| `stdout` | Standard Output | `1`             |
+| `stderr` | Standard Error  | `2`             |
+
+**Example:**
 
 ```bash
-sort < names.txt
+cat file.txt > output.txt 2> error.txt
+```
+
+এখানে stdout যাবে `output.txt` তে, আর যদি কোনো error হয়, সেটা `error.txt` তে যাবে।
+
+---
+
+## 🔹 Combine stdout and stderr
+
+সব output (normal + error) একসাথে file এ redirect করতে:
+
+```bash
+command > all.txt 2>&1
+```
+
+বা
+
+```bash
+command &> all.txt
 ```
 
 ---
 
-## 🔁 Stderr Redirection
+## 🔹 Pipes (`|`)
 
-### `2>` (Redirect Standard Error)
-
-```bash
-ls non_existing_file 2> error.txt
-```
-
-Saves error messages to `error.txt`
-
-### Redirect Both stdout and stderr:
+Pipe হল এক command এর output কে পরের command এর input হিসেবে পাঠানো।
 
 ```bash
-command > out.txt 2>&1
+cat names.txt | grep "John"
 ```
 
-Or
+এখানে `cat` এর output → `grep` এর input।
+
+আরো Example:
 
 ```bash
-command &> out.txt
+ps aux | grep node | sort -k 3 -nr | head
 ```
+
+একাধিক command একটার পর একটা chain করা যায়।
 
 ---
 
-## 🔁 Combine Redirection and Pipes
-
-You can combine redirection and pipes for advanced control:
+## 🧠 Practical Use Case:
 
 ```bash
-cat file.txt 2> errors.txt | grep 'something' > result.txt
+cat access.log | grep 500 | wc -l
 ```
 
----
+এইটা বলছে:
 
-## Summary Table
-
-| Symbol | Purpose                       | Example               |        |        |
-| ------ | ----------------------------- | --------------------- | ------ | ------ |
-| \`     | \`                            | Pipe stdout to stdin  | \`cmd1 | cmd2\` |
-| `>`    | Redirect stdout (overwrite)   | `echo hi > file.txt`  |        |        |
-| `>>`   | Redirect stdout (append)      | `echo hi >> file.txt` |        |        |
-| `<`    | Redirect file to stdin        | `sort < file.txt`     |        |        |
-| `2>`   | Redirect stderr               | `cmd 2> error.txt`    |        |        |
-| `&>`   | Redirect both stdout & stderr | `cmd &> out.txt`      |        |        |
+* `cat access.log`: log file read করো
+* `grep 500`: শুধু যেগুলায় 500 আছে
+* `wc -l`: কয়টা line (error) হয়েছে সেটা count করো
 
 ---
 
-✅ These features make the Unix shell extremely powerful and script-friendly.
+## ✅ Summary
 
-Next step: Try combining redirection and pipes in practice!
+* `>`: overwrite file with output
+* `>>`: append output
+* `<`: input redirect from file
+* `2> file`: error stream redirect
+* `|`: pipe one command’s output to another
+
+---
+
+Next time terminal use করবা, এই concepts গুলো use করে real power টা feel করতে পারবা 🚀
